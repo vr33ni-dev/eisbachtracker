@@ -1,0 +1,48 @@
+image: node:18
+
+stages:
+  - build
+  - pages
+
+variables:
+  # speed up installs
+  NPM_CACHE_FOLDER: "$CI_PROJECT_DIR/.npm"
+
+cache:
+  key: "${CI_JOB_NAME}"
+  paths:
+    - .npm/
+    - client/node_modules/
+
+build:
+  stage: build
+  script:
+    # 1) go into your client folder
+    - cd client
+    # 2) install deps
+    - npm ci
+    # 3) inject your backend URL from a CI/CD variable
+    - echo "VITE_BACKEND_API_URL=$VITE_BACKEND_API_URL" >> .env
+    # 4) build for production
+    - npm run build
+  artifacts:
+    # keep the dist output around for the pages job
+    paths:
+      - client/dist
+    expire_in: 1 hour
+  only:
+    - master
+
+pages:
+  stage: pages
+  dependencies:
+    - build
+  script:
+    # copy your dist folder to `public/` for Pages
+    - mkdir public
+    - cp -r client/dist/* public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
