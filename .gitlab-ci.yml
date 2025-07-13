@@ -23,6 +23,8 @@ build:
     - npm ci
     # 3) inject your backend URL from a CI/CD variable
     - echo "VITE_BACKEND_API_URL=$VITE_BACKEND_API_URL" >> .env
+    - echo "Contents of .env:"
+    - cat .env
     # 4) build for production
     - npm run build
   artifacts:
