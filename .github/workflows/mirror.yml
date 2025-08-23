@@ -1,0 +1,26 @@
+name: Mirror to GitLab
+on:
+  push:
+    branches: ["**"] # all branches
+    tags: ["*"] # all tags
+  delete: # branch/tag deletions (no filters allowed)
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push branches & tags to GitLab (no hidden refs)
+        env:
+          GITLAB_URL: ${{ secrets.GITLAB_URL }} # HTTPS form
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@${GITLAB_URL#https://}"
+          # Push branches, prune deleted ones, force updates if needed
+          git push --prune --atomic gitlab refs/heads/*:refs/heads/*
+          # Push tags (fast-forward only)
+          git push --prune --atomic gitlab refs/tags/*:refs/tags/*
