@@ -46,4 +46,4 @@ Check the respective READMEs for detailed setup and usage instructions:
 MIT — Feel free to use, adapt, and surf responsibly 🏄‍♀️
 
 ---
-> **Note:** The canonical repository is [**on GitHub**](https://github.com/vr33ni/eisbachtracker) · [Mirror on GitLab →](https://gitlab.com/vr33ni-personal/eisbachtracker) [![Mirror Status](https://github.com/vr33ni/eisbachtracker/actions/workflows/mirror.yml/badge.svg)](https://github.com/vr33ni/eisbachtracker/actions/workflows/mirror.yml)
+> **Note:** The canonical repository is [**on GitHub**](https://github.com/vr33ni-dev/eisbachtracker) · [Mirror on GitLab →](https://gitlab.com/vr33ni-personal/eisbachtracker) [![Mirror Status](https://github.com/vr33ni-dev/eisbachtracker/actions/workflows/mirror.yml/badge.svg)](https://github.com/vr33ni-dev/eisbachtracker/actions/workflows/mirror.yml)
