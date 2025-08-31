@@ -1,0 +1,14 @@
+name: Delete branch on GitLab (PR merge)
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  delete_on_merge:
+    if: github.event.pull_request.merged == true
+    uses: vr33ni-dev/ci-templates/.github/workflows/gitlab-delete-branch.yml@v1
+    with:
+      gitlab_url: https://gitlab.com/vr33ni-personal/${{ github.event.repository.name }}.git
+      branch: ${{ github.event.pull_request.head.ref }}
+    secrets:
+      gitlab_token: ${{ secrets.GITLAB_TOKEN }}
