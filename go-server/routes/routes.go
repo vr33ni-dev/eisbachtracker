@@ -3,8 +3,11 @@ package routes
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
 	"strconv"
 	"time"
 
@@ -25,6 +28,7 @@ func RegisterRoutes(db *pgxpool.Pool) {
 	http.HandleFunc("/api/conditions/water", middleware.WithCORS(handleWaterLevelAndFlow(waterService)))
 	http.HandleFunc("/api/surfers", middleware.WithCORS(handleSurferEntries(surferService)))
 	http.HandleFunc("/api/surfers/predict", middleware.WithCORS(handlePrediction(airService, surferService, waterService)))
+	http.HandleFunc("/api/ml/health", middleware.WithCORS(handleMLHealth()))
 }
 
 // -- Handlers --
@@ -159,7 +163,20 @@ func handlePrediction(airService conditions.AirDataProvider, service *surferdata
 			WeatherCondition: weatherConditionValue,
 			WaterLevel:       waterLevel,
 		})
+
+		w.Header().Set("Content-Type", "application/json")
+
 		if err != nil {
+			// If it's an ML 429/503, set status + Retry-After, but still return the body (degraded).
+			if me, ok := err.(*surferdata.MLError); ok && (me.Status == 429 || me.Status == 503) {
+				if me.RetryAfterSeconds != nil {
+					w.Header().Set("Retry-After", strconv.Itoa(*me.RetryAfterSeconds))
+				}
+				w.WriteHeader(me.Status)
+				_ = json.NewEncoder(w).Encode(prediction)
+				return
+			}
+			// Otherwise 500
 			http.Error(w, "Could not compute prediction: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -229,5 +246,24 @@ func HandleWaterHistory(service *conditions.WaterDataService) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(history)
+	}
+}
+
+func handleMLHealth() http.HandlerFunc {
+	flaskURL := os.Getenv("FLASK_API_URL") // e.g. http://127.0.0.1:5001/predict (we'll swap to /health)
+	return func(w http.ResponseWriter, r *http.Request) {
+		u, _ := url.Parse(flaskURL)
+		u.Path = "/health"
+		req, _ := http.NewRequestWithContext(r.Context(), http.MethodGet, u.String(), nil)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_ = json.NewEncoder(w).Encode(map[string]any{"ready": false, "error": err.Error()})
+			return
+		}
+		defer resp.Body.Close()
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		io.Copy(w, resp.Body)
 	}
 }
