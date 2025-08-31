@@ -21,8 +21,8 @@ Powered by:
 ### Prerequisites
 
 - Go installed (>= 1.24)
-- PostgreSQL running locally
-- Flyway installed → https://flywaydb.org/download
+- PostgreSQL running locally (``brew services start postgresql``)
+- Flyway installed → <https://flywaydb.org/download>
 
 ---
 
@@ -75,7 +75,6 @@ flyway.locations=filesystem:./db/migrations
 |`/api/conditions/water/history`|GET|Get historical data on water level and flow|
 |`/api/conditions/water`|GET|Get latest water level and flow|
 
-
 ---
 
 ## Production Deploy (Render)
@@ -123,6 +122,7 @@ DB = Neon Postgres Cloud Database
 If you add a new migration file (like `V3__add_column.sql`):
 
 Run locally:
+
 ```bash
 make migrate-prod
 ```
@@ -164,7 +164,7 @@ make migrate-prod
         +-------------------------+
 
 ### Prediction logic diagram - weighting of factors
- 
+
           | Current Time     |  ---> hour = now.getHours()
           +------------------+
                       |
@@ -192,4 +192,3 @@ make migrate-prod
                       |
                       v
                🎯 Final Prediction
-
