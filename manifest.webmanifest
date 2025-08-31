@@ -1,0 +1,1 @@
+{"name":"EisbachTracker PWA","short_name":"EisbachTracker","description":"Live stats for water level and flow of the Eisbach River in Munich","start_url":"/eisbachtracker-pwa/","display":"standalone","background_color":"#ffffff","theme_color":"#42b883","lang":"en","scope":"./","icons":[{"src":"/eisbachtracker-pwa/pwa-icon.svg","sizes":"192x192","type":"image/svg+xml"}]}

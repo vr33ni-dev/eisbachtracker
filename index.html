@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Eisbach Tracker</title>
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Correct reference to the PWA icon -->
+    <link rel="icon" href="/eisbachtracker-pwa/pwa-icon.JPG" />
+
+    <!-- 🧠 Only load manifest in browser, not in Capacitor -->
+    <script>
+      if (location.protocol.startsWith('http')) {
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = '/eisbachtracker-pwa/manifest.webmanifest';
+        document.head.appendChild(link);
+      }
+    </script>
+    <script type="module" crossorigin src="./assets/index-JqJax8fH.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DAYDGd3F.css">
+  <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
+  <body>
+    <!-- This is where your Vue components will be injected -->
+    <div id="app"></div>
+
+    <!-- Main entry for Vue -->
+  </body>
+</html>
