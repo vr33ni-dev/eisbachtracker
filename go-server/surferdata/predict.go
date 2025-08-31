@@ -2,7 +2,6 @@ package surferdata
 
 import (
 	"context"
-	"fmt"
 	"math"
 
 	"github.com/vr33ni/eisbachtracker-pwa/go-server/conditions"
@@ -42,24 +41,21 @@ func (s *Service) basePredictionByHour(hour int) (float64, error) {
 }
 
 func (s *Service) PredictSurferCountAdvanced(params PredictionParams) (interface{}, error) {
-	// Step 1: Get the base prediction by hour (rule-based fallback)
 	base, err := s.basePredictionByHour(params.Hour)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	// Step 2: Calculate the rule-based factor
 	weatherData := &conditions.WeatherData{
 		Temp:      safeFloat(params.AirTemp),
 		Condition: params.WeatherCondition,
 	}
 	factor := calculateFactor(params.Hour, params.WaterTemp, weatherData, params.WaterLevel, params.WaterFlow)
-	ruleBasedPrediction := int(math.Round(base * factor))
-	if ruleBasedPrediction < 0 {
-		ruleBasedPrediction = 0
+	ruleBased := int(math.Round(base * factor))
+	if ruleBased < 0 {
+		ruleBased = 0
 	}
 
-	// Step 3: Call the ML-based prediction
 	mlParams := MLPredictionParams{
 		Hour:             params.Hour,
 		WaterTemp:        safeFloat(params.WaterTemp),
@@ -69,19 +65,30 @@ func (s *Service) PredictSurferCountAdvanced(params PredictionParams) (interface
 	}
 	mlPrediction, explanation, err := s.PredictSurferCountML(mlParams)
 	if err != nil {
-		fmt.Printf("Error predicting surfer count: %v\n", err)
-		return 0, err
+		// If the ML service is waking up (429/503), return a degraded body AND the error.
+		if me, ok := err.(*MLError); ok && (me.Status == 429 || me.Status == 503) {
+			resp := map[string]any{
+				"hour":              params.Hour,
+				"water_temperature": safeFloat(params.WaterTemp),
+				"air_temperature":   safeFloat(params.AirTemp),
+				"weather_condition": params.WeatherCondition,
+				"water_level":       params.WaterLevel,
+				"prediction":        ruleBased,
+				"explanation":       map[string]float64{},
+				"degraded":          true,
+				"notice":            "Model is waking up (Render free tier). Showing fallback estimate.",
+				"source":            "rule_based_fallback",
+			}
+			if me.RetryAfterSeconds != nil {
+				resp["retry_after_seconds"] = *me.RetryAfterSeconds
+			}
+			return resp, me // let the HTTP layer set status + headers
+		}
+		// Other errors bubble up as 500.
+		return nil, err
 	}
 
-	fmt.Printf("Predicted Surfer Count: %d\n", mlPrediction)
-	fmt.Println("Feature Contributions:")
-	for feature, contribution := range explanation {
-		fmt.Printf("  %s: %.2f\n", feature, contribution)
-	}
-
-	// Step 4: Combine the predictions (optional)
-	// Combine the response
-	response := map[string]interface{}{
+	return map[string]any{
 		"hour":              params.Hour,
 		"water_temperature": safeFloat(params.WaterTemp),
 		"air_temperature":   safeFloat(params.AirTemp),
@@ -89,7 +96,7 @@ func (s *Service) PredictSurferCountAdvanced(params PredictionParams) (interface
 		"water_level":       params.WaterLevel,
 		"prediction":        mlPrediction,
 		"explanation":       explanation,
-	}
-
-	return response, nil
+		"degraded":          false,
+		"source":            "ml",
+	}, nil
 }
